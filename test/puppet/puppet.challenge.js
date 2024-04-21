@@ -119,7 +119,7 @@ describe('[Challenge] Puppet', function () {
       lendingPool.address,
       token.address,
       player.address,
-      { value: ethers.utils.parseEther('100') }
+      { value: ethers.utils.parseEther('15') }
     );
     console.log('Attacker @', attacker.address);
     let bal = await attacker.provider.getBalance(attacker.address);
@@ -145,6 +145,14 @@ describe('[Challenge] Puppet', function () {
       ethers.utils.formatEther(
         await attacker.provider.getBalance(attacker.address)
       )
+    );
+    console.log(
+      'Player ETH balance after',
+      ethers.utils.formatEther(await player.getBalance())
+    );
+    console.log(
+      'Player token balance after',
+      ethers.utils.formatEther(await token.balanceOf(player.address))
     );
   });
 
