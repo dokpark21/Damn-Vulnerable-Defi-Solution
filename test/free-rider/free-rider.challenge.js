@@ -127,7 +127,8 @@ describe('[Challenge] Free Rider', function () {
   it('Execution', async function () {
     /** CODE YOUR SOLUTION HERE */
     const AttackContractFactory = await ethers.getContractFactory(
-      'FreeRiderAttacker'
+      'FreeRiderAttacker',
+      player
     );
 
     const attacker = await AttackContractFactory.deploy(
@@ -140,7 +141,7 @@ describe('[Challenge] Free Rider', function () {
       { value: ethers.utils.parseEther('0.05') }
     );
 
-    await attacker.attack();
+    await attacker.connect(player).attack();
   });
 
   after(async function () {
